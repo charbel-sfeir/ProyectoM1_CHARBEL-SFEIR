@@ -45,17 +45,6 @@ Sin frameworks, sin dependencias, sin build step. Un `index.html`, una hoja de e
 
 `HTML5` · `CSS3` (variables nativas, Grid) · `JavaScript` (ES6+, vanilla) · Canvas API para extracción de color y exportación PNG
 
-## Uso local
-
-```bash
-git clone https://github.com/charbel-sfeir/M1_CHARBEL-SFEIR.git
-cd M1_CHARBEL-SFEIR
-```
-
-Abrí `index.html` con la extensión **Live Server** de VS Code, o simplemente abrí el archivo en el navegador — no requiere instalación ni build.
-
-## Estructura
-
 ```
 M1_CHARBEL-SFEIR/
 ├── index.html
