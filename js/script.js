@@ -29,8 +29,19 @@
   const copyGradientBtn = document.getElementById('copy-gradient-btn');
   const rolesList = document.getElementById('roles-list');
   const pairsList = document.getElementById('pairs-list');
+  const themeToggle = document.getElementById('theme-toggle');
+  const downloadPngBtn = document.getElementById('download-png-btn');
+  const printBtn = document.getElementById('print-btn');
+  const shareBtn = document.getElementById('share-btn');
+  const historyStrip = document.getElementById('history-strip');
+  const imageInput = document.getElementById('image-input');
+  const extractPreviewRow = document.getElementById('extract-preview-row');
+  const extractPreviewImg = document.getElementById('extract-preview-img');
+  const extractPreviewName = document.getElementById('extract-preview-name');
 
   let currentGradientType = '135deg';
+  const THEME_KEY = 'colorfly_theme';
+  const HISTORY_KEY = 'colorfly_history';
 
   // ---------- Color helpers ----------
 
@@ -145,7 +156,66 @@
     }
     currentPalette = next;
     renderPalette();
+    pushHistory();
     showToast('Nueva paleta generada ✓');
+  }
+
+  // ---------- Historial reciente (automático, distinto de "guardadas") ----------
+  function getHistory() {
+    try {
+      const raw = localStorage.getItem(HISTORY_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function pushHistory() {
+    const hexes = currentPalette.map(c => hslToHex(c.hsl));
+    const key = hexes.join(',');
+    let history = getHistory().filter(h => h.colors.join(',') !== key);
+    history.unshift({ id: Date.now(), colors: hexes });
+    history = history.slice(0, 10);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const history = getHistory();
+    historyStrip.innerHTML = '';
+
+    if (history.length === 0) {
+      const p = document.createElement('p');
+      p.className = 'history__empty';
+      p.textContent = 'Las últimas paletas que generes van a aparecer acá.';
+      historyStrip.appendChild(p);
+      return;
+    }
+
+    history.forEach(entry => {
+      const item = document.createElement('button');
+      item.type = 'button';
+      item.className = 'history__item';
+      item.setAttribute('aria-label', `Cargar paleta de ${entry.colors.length} colores del historial`);
+      entry.colors.forEach(hex => {
+        const span = document.createElement('span');
+        span.style.background = hex;
+        item.appendChild(span);
+      });
+      item.addEventListener('click', () => loadPaletteFromHexes(entry.colors));
+      historyStrip.appendChild(item);
+    });
+  }
+
+  function loadPaletteFromHexes(hexes) {
+    if ([6, 8, 9].includes(hexes.length)) {
+      currentSize = hexes.length;
+      const sizeInput = document.querySelector(`input[name="palette-size"][value="${currentSize}"]`);
+      if (sizeInput) sizeInput.checked = true;
+    }
+    currentPalette = hexes.map(hex => ({ hsl: hexToHsl(hex), locked: false }));
+    renderPalette();
+    showToast('Paleta cargada');
   }
 
   function renderPalette() {
@@ -166,7 +236,7 @@
 
       const li = document.createElement('li');
       li.className = 'swatch';
-      li.style.background = hex;
+      li.style.setProperty('--card-bg', hex);
       li.style.color = textColor;
       li.style.animationDelay = `${index * 45}ms`;
       if (color.locked) li.classList.add('is-locked');
@@ -177,7 +247,7 @@
       const lockBtn = document.createElement('button');
       lockBtn.type = 'button';
       lockBtn.className = 'swatch__lock';
-      lockBtn.style.color = '#1B1B1F';
+      lockBtn.style.color = '#221E19';
       lockBtn.setAttribute(
         'aria-label',
         color.locked ? `Desbloquear color ${hex}` : `Bloquear color ${hex}`
@@ -188,16 +258,6 @@
 
       top.appendChild(lockBtn);
       li.appendChild(top);
-
-      const codeBtn = document.createElement('button');
-      codeBtn.type = 'button';
-      codeBtn.className = 'swatch__code-btn';
-      codeBtn.style.color = '#1B1B1F';
-      codeBtn.textContent = displayCode;
-      codeBtn.setAttribute('aria-label', `Copiar código ${displayCode} al portapapeles`);
-      codeBtn.addEventListener('click', () => copyToClipboard(displayCode));
-
-      li.appendChild(codeBtn);
 
       const variationsRow = document.createElement('div');
       variationsRow.className = 'swatch__variations';
@@ -214,6 +274,14 @@
         variationsRow.appendChild(btn);
       });
       li.appendChild(variationsRow);
+
+      const codeBtn = document.createElement('button');
+      codeBtn.type = 'button';
+      codeBtn.className = 'swatch__code-btn';
+      codeBtn.textContent = displayCode;
+      codeBtn.setAttribute('aria-label', `Copiar código ${displayCode} al portapapeles`);
+      codeBtn.addEventListener('click', () => copyToClipboard(displayCode));
+      li.appendChild(codeBtn);
 
       paletteList.appendChild(li);
     });
@@ -332,6 +400,99 @@
     }
   }
 
+  // ---------- Exportar como PNG ----------
+  function downloadPaletteAsPng() {
+    if (currentPalette.length === 0) return;
+
+    const swatchWidth = 220;
+    const swatchHeight = 260;
+    const headerHeight = 56;
+    const width = swatchWidth * currentPalette.length;
+    const height = headerHeight + swatchHeight;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#F5EFE2';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = '#221E19';
+    ctx.font = '700 22px Georgia, serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('Colorfly Studio — Paleta generada', 20, 36);
+
+    currentPalette.forEach((color, i) => {
+      const hex = hslToHex(color.hsl);
+      const label = formatColor(color.hsl, currentFormat);
+      const textColor = getReadableTextColor(color.hsl);
+
+      ctx.fillStyle = hex;
+      ctx.fillRect(i * swatchWidth, headerHeight, swatchWidth, swatchHeight);
+
+      ctx.fillStyle = textColor;
+      ctx.font = '700 15px "Courier New", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(label, i * swatchWidth + swatchWidth / 2, headerHeight + swatchHeight - 24);
+    });
+
+    const link = document.createElement('a');
+    link.download = `paleta-colorfly-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('PNG descargado ✓');
+  }
+
+  // ---------- Compartir por link ----------
+  function buildShareUrl() {
+    const hexes = currentPalette.map(c => hslToHex(c.hsl));
+    const param = hexes.map(h => h.replace('#', '')).join('-');
+    const url = new URL(window.location.href);
+    url.searchParams.set('p', param);
+    url.searchParams.set('f', currentFormat);
+    return url.toString();
+  }
+
+  async function sharePalette() {
+    const url = buildShareUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copiado — pegalo donde quieras compartirlo');
+    } catch {
+      showToast('No se pudo copiar el link automáticamente');
+    }
+  }
+
+  function loadPaletteFromQueryString() {
+    const params = new URLSearchParams(window.location.search);
+    const p = params.get('p');
+    if (!p) return false;
+
+    const hexes = p
+      .split('-')
+      .map(h => `#${h}`)
+      .filter(h => /^#[0-9A-Fa-f]{6}$/i.test(h));
+
+    if (![6, 8, 9].includes(hexes.length)) return false;
+
+    const format = params.get('f');
+    if (format === 'hsl' || format === 'hex') {
+      currentFormat = format;
+      const formatInput = document.querySelector(`input[name="color-format"][value="${format}"]`);
+      if (formatInput) formatInput.checked = true;
+    }
+
+    currentSize = hexes.length;
+    const sizeInput = document.querySelector(`input[name="palette-size"][value="${currentSize}"]`);
+    if (sizeInput) sizeInput.checked = true;
+
+    currentPalette = hexes.map(hex => ({ hsl: hexToHsl(hex), locked: false }));
+    renderPalette();
+    showToast('Paleta cargada desde el link compartido');
+    return true;
+  }
+
   async function copyToClipboard(text, label = 'código') {
     try {
       await navigator.clipboard.writeText(text);
@@ -415,6 +576,101 @@
     return [h, Math.round(s * 100), Math.round(l * 100)];
   }
 
+  // ---------- Extraer paleta desde una imagen ----------
+  function rgbToHsl([r, g, b]) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+    const d = max - min;
+    if (d !== 0) {
+      s = d / (1 - Math.abs(2 * l - 1));
+      switch (max) {
+        case r: h = ((g - b) / d) % 6; break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h = Math.round(h * 60);
+      if (h < 0) h += 360;
+    }
+    return [h, Math.round(s * 100), Math.round(l * 100)];
+  }
+
+  /** K-means muy liviano en espacio RGB, para agrupar píxeles en N colores dominantes. */
+  function kMeansColors(pixels, k, iterations = 6) {
+    if (pixels.length === 0) return [];
+    let centroids = [];
+    const used = new Set();
+    while (centroids.length < k && centroids.length < pixels.length) {
+      const idx = Math.floor(Math.random() * pixels.length);
+      if (!used.has(idx)) {
+        used.add(idx);
+        centroids.push(pixels[idx].slice());
+      }
+    }
+    for (let iter = 0; iter < iterations; iter++) {
+      const groups = Array.from({ length: centroids.length }, () => []);
+      pixels.forEach(p => {
+        let bestIdx = 0, bestDist = Infinity;
+        centroids.forEach((c, i) => {
+          const d = (p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2;
+          if (d < bestDist) { bestDist = d; bestIdx = i; }
+        });
+        groups[bestIdx].push(p);
+      });
+      centroids = groups.map((g, i) => {
+        if (g.length === 0) return centroids[i];
+        const sum = g.reduce((acc, p) => [acc[0] + p[0], acc[1] + p[1], acc[2] + p[2]], [0, 0, 0]);
+        return [sum[0] / g.length, sum[1] / g.length, sum[2] / g.length];
+      });
+    }
+    return centroids.map(c => c.map(v => Math.round(v)));
+  }
+
+  function extractPaletteFromImage(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const maxDim = 160;
+        const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.width * scale));
+        canvas.height = Math.max(1, Math.round(img.height * scale));
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        let data;
+        try {
+          data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        } catch (err) {
+          showToast('No se pudo leer esta imagen (¿es de otro dominio?)');
+          return;
+        }
+
+        const pixels = [];
+        for (let i = 0; i < data.length; i += 4 * 2) {
+          if (data[i + 3] < 128) continue; // ignora píxeles muy transparentes
+          pixels.push([data[i], data[i + 1], data[i + 2]]);
+        }
+
+        const clusters = kMeansColors(pixels, currentSize, 6);
+        currentPalette = clusters.map(rgb => ({ hsl: rgbToHsl(rgb), locked: false }));
+        renderPalette();
+        pushHistory();
+        showToast('Paleta extraída de la imagen ✓');
+
+        extractPreviewImg.src = e.target.result;
+        extractPreviewName.textContent = file.name;
+        extractPreviewRow.hidden = false;
+      };
+      img.onerror = () => showToast('No se pudo cargar la imagen');
+      img.src = e.target.result;
+    };
+    reader.onerror = () => showToast('No se pudo leer el archivo');
+    reader.readAsDataURL(file);
+  }
+
   function renderSavedPalettes() {
     const palettes = getSavedPalettes();
     savedList.innerHTML = '';
@@ -493,12 +749,62 @@
 
   copyGradientBtn.addEventListener('click', copyGradientCss);
 
+  // ---------- Theme (claro / oscuro) ----------
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    themeToggle.setAttribute('aria-pressed', String(theme === 'dark'));
+    themeToggle.setAttribute(
+      'aria-label',
+      theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'
+    );
+    themeToggle.querySelector('.theme-toggle__icon').textContent =
+      theme === 'dark' ? '☀️' : '🌙';
+  }
+
+  function initTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    if (saved) {
+      applyTheme(saved);
+      return;
+    }
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+  });
+
+  downloadPngBtn.addEventListener('click', downloadPaletteAsPng);
+  printBtn.addEventListener('click', () => window.print());
+  shareBtn.addEventListener('click', sharePalette);
+
+  imageInput.addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Elegí un archivo de imagen válido');
+      return;
+    }
+    extractPaletteFromImage(file);
+  });
+
   // ---------- Init ----------
   function init() {
+    initTheme();
     currentSize = Number(document.querySelector('input[name="palette-size"]:checked').value);
     currentFormat = document.querySelector('input[name="color-format"]:checked').value;
-    generatePalette();
+
+    const loadedFromLink = loadPaletteFromQueryString();
+    if (!loadedFromLink) {
+      generatePalette();
+    }
+
     renderSavedPalettes();
+    renderHistory();
   }
 
   document.addEventListener('DOMContentLoaded', init);
