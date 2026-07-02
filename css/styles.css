@@ -36,6 +36,7 @@ body {
   color: var(--ink);
   font-family: "Poppins", sans-serif;
   line-height: 1.5;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* utilidades */
@@ -204,6 +205,8 @@ body {
 }
 .btn-generar:hover {
   opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(255, 90, 54, 0.35);
 }
 
 .btn-secundario {
