@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🎨 Paleta
+# 🎨 ColorflyStudio
 
 **Generador de paletas de color interactivo, construido con HTML, CSS y JavaScript puros.**
 
-[Ver demo en vivo](https://charbel-sfeir.github.io/M1_CHARBEL-SFEIR/) · [Reportar un bug](https://github.com/charbel-sfeir/M1_CHARBEL-SFEIR/issues)
+[Ver demo en vivo](https://charbel-sfeir.github.io/M1_CHARBEL-SFEIR/) 
 
 </div>
 
@@ -12,7 +12,7 @@
 
 ## Sobre el proyecto
 
-**Paleta** genera combinaciones de color aleatorias pensadas para acelerar el arranque de un proyecto de diseño o branding. A partir de un click, produce paletas de 6, 8 o 9 colores en formato HEX o HSL, y a partir de ahí propone variaciones tonales, un gradiente combinado y sugerencias de qué color usar como fondo, texto o acento — basadas en cálculos reales de contraste (WCAG), no en corazonadas.
+**ColorflyStudio** genera combinaciones de color aleatorias pensadas para acelerar el arranque de un proyecto de diseño o branding. A partir de un click, produce paletas de 6, 8 o 9 colores en formato HEX o HSL, y a partir de ahí propone variaciones tonales, un gradiente combinado y sugerencias de qué color usar como fondo, texto o acento — basadas en cálculos reales de contraste (WCAG), no en corazonadas.
 
 También podés partir de una imagen propia: subís una foto o un moodboard y la app extrae sus colores dominantes automáticamente.
 
