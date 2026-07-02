@@ -1,60 +1,62 @@
-<div align="center">
+# Paleta - Generador de Paletas Interactivo
 
-# 🎨 Color flyStudio
+Proyecto Integrador M1 - Full Stack (Henry)
 
-**Generador de paletas de color interactivo, construido con HTML, CSS y JavaScript puros.**
+Demo: https://charbel-sfeir.github.io/ProyectoM1_CHARBEL-SFEIR/
 
-[Ver demo en vivo](https://charbel-sfeir.github.io/M1_CHARBEL-SFEIR/) 
+## Qué es esto
 
-</div>
+Es una página web que genera paletas de colores para usar en proyectos de diseño. Se puede elegir generar los colores al azar, o subir una imagen y sacar los colores principales de esa imagen.
 
----
+La hice con HTML, CSS y JavaScript, sin usar ningún framework ni librería externa. Todo el código corre en el navegador, no tiene backend ni base de datos (eso lo vamos a ver en los próximos módulos).
 
-## Sobre el proyecto
+## Qué se puede hacer
 
-**ColorflyStudio** genera combinaciones de color aleatorias pensadas para acelerar el arranque de un proyecto de diseño o branding. A partir de un click, produce paletas de 6, 8 o 9 colores en formato HEX o HSL, y a partir de ahí propone variaciones tonales, un gradiente combinado y sugerencias de qué color usar como fondo, texto o acento — basadas en cálculos reales de contraste (WCAG), no en corazonadas.
+- Generar una paleta de 6, 8 o 9 colores, en formato HEX o HSL
+- Sacar los colores de una imagen que subas (usa un algoritmo de agrupamiento llamado k-means, que armé yo mismo sin librerías)
+- Bloquear un color para que no cambie cuando generás una paleta nueva
+- Ver variaciones más claras y más oscuras de cada color
+- Armar un gradiente con toda la paleta y copiar el CSS
+- La página te sugiere qué color usar de fondo, cuál de texto y cuál de acento, calculando el contraste entre colores (esto sigue el estándar de accesibilidad WCAG, para que el texto se pueda leer bien)
+- Guardar paletas que te gusten (se guardan en el navegador con localStorage)
+- Un historial automático de las últimas paletas que generaste
+- Descargar la paleta como imagen PNG
+- Compartir una paleta por link (queda codificada en la URL)
+- Modo oscuro
+- Imprimir o guardar como PDF
 
-También podés partir de una imagen propia: subís una foto o un moodboard y la app extrae sus colores dominantes automáticamente.
-
-Sin frameworks, sin dependencias, sin build step. Un `index.html`, una hoja de estilos y un script.
-
-## Funcionalidades
-
-**Generación**
-- Paletas de 6, 8 o 9 colores, en HEX o HSL, con distribución de matices por ángulo áureo para evitar tonos repetidos en una misma paleta.
-- **Extracción desde una imagen** — subís una foto y un clustering k-means liviano (implementado desde cero, sin librerías) calcula los colores dominantes reales de la imagen.
-- **Bloqueo de color** — fijá los que te gustan y regenerá solo el resto.
-
-**Exploración**
-- **Variaciones tonales** por color (tints y shades), un click para copiar cualquiera.
-- **Gradiente combinado** de toda la paleta, en modo diagonal, horizontal o radial, con su CSS listo para copiar.
-- **Sugerencias de uso** — cálculo automático de qué color conviene como fondo, cuál como texto y cuál como acento, con los pares de mejor contraste según WCAG.
-
-**Guardado y exportación**
-- Paletas guardadas manualmente en `localStorage`.
-- **Historial automático** de las últimas 10 paletas generadas, para volver atrás sin perder nada.
-- **Descarga como PNG** — exporta la paleta actual como imagen lista para compartir.
-- **Imprimir / Guardar como PDF** — vista de impresión limpia, solo con las fichas de color.
-- **Compartir por link** — copia una URL con la paleta codificada; quien la abre ve exactamente esos colores.
-
-**Interfaz**
-- Modo claro / oscuro, con persistencia y detección de preferencia del sistema.
-- Accesible: navegación por teclado, foco visible, contraste de texto calculado dinámicamente, `aria-live` en el feedback.
-
-## Stack
-
-`HTML5` · `CSS3` (variables nativas, Grid) · `JavaScript` (ES6+, vanilla) · Canvas API para extracción de color y exportación PNG
+## Cómo lo armé (estructura de archivos)
 
 ```
-M1_CHARBEL-SFEIR/
-├── index.html
-├── css/
-│   └── styles.css
-├── js/
-│   └── script.js
-└── README.md
+index.html      -> la estructura de la pagina
+css/styles.css  -> todos los estilos
+js/script.js    -> toda la logica
+README.md       -> este archivo
 ```
+
+Separé todo en tres archivos distintos porque es la forma más ordenada de trabajar sin frameworks: HTML para la estructura, CSS para cómo se ve, y JS para lo que hace.
+
+## Cómo probarlo en tu compu
+
+Clonás el repo:
+```
+git clone https://github.com/charbel-sfeir/ProyectoM1_CHARBEL-SFEIR.git
+```
+
+Y abrís `index.html` con la extensión Live Server de VS Code (o directamente lo abrís con el navegador, funciona igual porque no necesita instalar nada).
+
+## Algunas decisiones que tomé
+
+- Usé HSL en vez de RGB para generar los colores porque es más fácil controlar que no salgan muy oscuros o muy claros.
+- Para que los colores de una misma paleta no se parezcan mucho entre sí, en vez de generar el matiz totalmente al azar, voy saltando siempre el mismo ángulo (137.5°) en la rueda de colores. Es una forma de repartir los colores de manera más pareja.
+- Para las sugerencias de contraste, calculé la fórmula de luminancia relativa que usa WCAG (el estándar de accesibilidad web) y con eso el ratio de contraste entre dos colores. Si el ratio da 4.5 o más, se considera que el texto se puede leer bien.
+- Para sacar los colores de una imagen, uso un algoritmo de clustering (k-means): agrupa los píxeles de la imagen según qué tan parecido es su color, y el centro de cada grupo termina siendo un color de la paleta.
+
+## Cosas que sé que se pueden mejorar
+
+- El algoritmo de extracción de imagen no anda tan bien con fotos que tienen pocos colores o son muy uniformes.
+- Todo lo que se guarda (paletas guardadas, historial) queda en el navegador de cada persona, no hay una cuenta ni nada centralizado - eso necesitaría un backend, que todavía no vimos en el curso.
 
 ## Autor
 
-**Charbel Sfeir** — [GitHub](https://github.com/charbel-sfeir)
+Charbel Sfeir - https://github.com/charbel-sfeir
